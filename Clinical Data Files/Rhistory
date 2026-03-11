@@ -1,0 +1,512 @@
+discharge_summaries %>%
+filter(str_detect(TEXT, regex("(?<![a-zA-Z])hypertens(ion|ive)(s)?(?![a-zA-Z])", ignore_case = TRUE))) %>%    #regex filter
+mutate(matched_word = str_extract_all(TEXT, regex("(?<![a-zA-Z])hypertens(ion|ive)(s)?(?![a-zA-Z])", ignore_case = TRUE)))  %>%   #extracts the matching words in TEXT
+select(NOTE_ID, matched_word) #only selects NOTE ID and matching words
+setwd("~/R Projects")
+discharge_summaries <- read.csv("discharge_summary.csv")
+summary(discharge_summaries)
+#So we need to develop the necessary strategy for our keyword window development
+#These include:
+#1. Note Type
+#2. Keyword selection
+#3. Window Size Selection
+#4. Search selection
+#Example -> looks for all mentione of statin and statin drugs
+#2. For cyst, example, the previously developed regex can be used  "(?<![a-zA-Z])cyst(s|ic)?(?![a-zA-z])" to find the necessary keywords
+#3. Window size - Start by selecting an initial window size based on how close the target information is likely to appear to your keyword, then adjust as needed during processing.
+#For the task we are focused on, identifying cyst location, it probably will be in the same sentence as the word cyst. In this case a medium-size window, say 20 words (10 words before and 10 after) would be a good starting point. Once you have this initial window size identified and extracted you will move on start processing the text window. During that process you may find that your initial guess isn’t working as well as you had hoped (maybe you’re not finding many matches or you have a lot of off-target matches). If that’s the case, then you want to move on to the next step of adjusting the window size.
+#4. Plan your search based on task type: confirm keyword, identify related info, or extract details, then filter for negation/unrelated context and extract location if needed
+#Exercise
+#1. Use discharge summaries to identify patients who have hypertension.
+discharge_summaries %>%
+filter(str_detect(TEXT, regex("(?<![a-zA-Z])hypertens(ion|ive)(s)?(?![a-zA-Z])", ignore_case = TRUE))) %>%    #regex filter
+mutate(matched_word = str_extract_all(TEXT, regex("(?<![a-zA-Z])hypertens(ion|ive)(s)?(?![a-zA-Z])", ignore_case = TRUE)))  %>%   #extracts the matching words in TEXT
+select(NOTE_ID, matched_word) #only selects NOTE ID and matching words
+discharge_summaries <- read.csv("discharge_summary.csv")
+summary(discharge_summaries)
+discharge_summaries %>%
+filter(str_detect(TEXT, regex("(?<![a-zA-Z])hypertens(ion|ive)(s)?(?![a-zA-Z])", ignore_case = TRUE))) %>%    #regex filter
+mutate(matched_word = str_extract_all(TEXT, regex("(?<![a-zA-Z])hypertens(ion|ive)(s)?(?![a-zA-Z])", ignore_case = TRUE)))  %>%   #extracts the matching words in TEXT
+select(NOTE_ID, matched_word) #only selects NOTE ID and matching words
+#Manually looking for BP measure
+install.packages("DT")
+library(DT)
+datatable(discharge_summaries)
+#I shall extract one note to use as an example, using #3 as it has 4 mentions of hypertension
+example_note <- discharge_summaries %>%
+filter(NOTE_ID == 3)
+ex_note <- example_note %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = INDEX - 10,
+WINDOW_END = INDEX + 10,
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))
+#Setting up Environment
+library(tidyverse)
+library(magrittr)
+ex_note <- example_note %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))
+#I shall extract one note to use as an example, using #3 as it has 4 mentions of hypertension
+example_note <- discharge_summaries %>%
+filter(NOTE_ID == 3)
+ex_note <- example_note %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))
+datatable(ex_note)
+ex_note <- example_note %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+filter(str_detect(TEXT, regex("(?<![a-zA-Z])hypertens(ion|ive)(s)?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(ex_note)
+ex_note <- example_note %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+filter(str_detect(TEXT, regex("(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(ex_note)
+ex_note <- example_note %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+filter(str_detect(TEXT, regex("(?<![a-zA-Z])hypertension(s)?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(ex_note)
+ex_note <- example_note %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+filter(str_detect(STRING = WORDS, pattern = regex("(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(ex_note)
+ex_note <- example_note %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(ex_note)
+#Now we would extend this filtering mechanism to all the notes within discharge_summaries
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", ignore_case = TRUE)))
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", ignore_case = TRUE)))
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?i)(?<![A-Za-z])blood\W*pressure(?![A-Za-z])|(?<![A-Za-z])BP(?![A-Za-z])", ignore_case = TRUE)))
+blood_pressure_headers <- tibble(header = c("blood pressure", "Blood Pressure", "BP"))
+blood_pressure_headers %>%
+datatable(., options = list(ordering=F, paging = F, searching=F, bLengthChange = F, bInfo = F), rownames= FALSE, colnames = "")
+physical_exam_headers %>%
+mutate(regex_test = str_extract(header, regex("blood pressure", ignore_case = TRUE)))
+blood_pressure_headers %>%
+mutate(regex_test = str_extract(header, regex("blood pressure", ignore_case = TRUE)))
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])blood pressure?(?![a-zA-Z])", ignore_case = TRUE)))
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])blood pressure(?![a-zA-Z])", ignore_case = TRUE)))
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])(blood pressure)(?![a-zA-Z])", ignore_case = TRUE)))
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])blood?(?![a-zA-Z])", ignore_case = TRUE)))
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])BP?(?![a-zA-Z])", ignore_case = TRUE)))
+bp_notes <- discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])BP?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(bp_notes)
+bp_notes <- discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])blood?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(bp_notes)
+bp_notes <- discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])blood ?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(bp_notes)
+bp_notes <- discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])blood pressure?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(bp_notes)
+bp_notes <- discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])blood?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(bp_notes)
+#Now we would extend this filtering mechanism to all the notes within discharge_summaries
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", ignore_case = TRUE)))
+discharge_summaries %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - 10 < 1 ~ 1,
+TRUE ~ INDEX - 10),
+WINDOW_END = case_when(INDEX + 10 > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + 10),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+"))  %>%
+filter(str_detect(string = WORDS, pattern = regex("(?<![a-zA-Z])blood?(?![a-zA-Z])", ignore_case = TRUE)))
+datatable(bp_notes)
+dataframe %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - half_window_size < 1 ~ 1,
+TRUE ~ INDEX - half_window_size),
+WINDOW_END = case_when(INDEX + half_window_size > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + half_window_size),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+ungroup() %>%
+filter(str_detect(string = WORDS, pattern = regex(keyword1, ignore_case = TRUE)),
+str_detect(string = lead(WORDS), pattern = regex(keyword2, ignore_case = TRUE))) %>%
+mutate(WINDOW_END = WINDOW_END + 1)
+extract_2words_text_window <- function(dataframe, keyword1, keyword2, half_window_size){
+dataframe %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - half_window_size < 1 ~ 1,
+TRUE ~ INDEX - half_window_size),
+WINDOW_END = case_when(INDEX + half_window_size > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + half_window_size),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+ungroup() %>%
+filter(str_detect(string = WORDS, pattern = regex(keyword1, ignore_case = TRUE)),
+str_detect(string = lead(WORDS), pattern = regex(keyword2, ignore_case = TRUE))) %>%
+mutate(WINDOW_END = WINDOW_END + 1)
+}
+extract_2words_text_window(discharge_summaries, blood, pressure, 10)
+extract_2words_text_window(discharge_summaries, "blood", "pressure", 10)
+blood_pressure_2words_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", 10)
+datatable(blood_pressure_2words_results)
+blood_pressure_2words_results <- extract_2words_text_window(discharge_summaries, "B", "P", 10)
+datatable(blood_pressure_2words_results)
+dataframe %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - half_window_size < 1 ~ 1,
+TRUE ~ INDEX - half_window_size),
+WINDOW_END = case_when(INDEX + half_window_size > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + half_window_size),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+ungroup() %>%
+filter(str_detect(string = WORDS, pattern = regex(keyword, ignore_case = TRUE)))
+extract_text_window <- function(dataframe, keyword, half_window_size) {
+dataframe %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - half_window_size < 1 ~ 1,
+TRUE ~ INDEX - half_window_size),
+WINDOW_END = case_when(INDEX + half_window_size > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + half_window_size),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+ungroup() %>%
+filter(str_detect(string = WORDS, pattern = regex(keyword, ignore_case = TRUE)))
+}
+extract_text_window(discharge_summaries, "hypertension", 10)
+extract_text_window(discharge_summaries, "hypertension", 20)
+extract_text_window(discharge_summaries, "hypertension", 1)
+extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 10)
+extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])blood(?![a-zA-Z])", 10)
+extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 10)
+datatable(results)
+results <- extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 10)
+datatable(results)
+results <- extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 10) %>%
+mutate(EXCLUSE = case_when(str_detect(WINDOW, regex(pattern  = "no history of hypertension?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0))
+results <- extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 10) %>%
+mutate(EXCLUSE = case_when(str_detect(WINDOW, regex(pattern  = "no history of hypertension?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0))
+datatable(results)
+results <- extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 10) %>%
+mutate(EXCLUDE = case_when(str_detect(WINDOW, regex(pattern  = "no history of hypertension?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0)) %>%
+filter(EXCLUDE != 1) %>%
+distinct(NOTE_ID)
+datatable(results)
+results <- extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 10) %>%
+mutate(EXCLUDE = case_when(str_detect(WINDOW, regex(pattern  = "no history of hypertension?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0)) %>%
+filter(EXCLUDE != 1)
+datatable(results)
+results <- extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 10) %>%
+mutate(EXCLUDE = case_when(str_detect(WINDOW, regex(pattern  = "no history of hypertension?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0)) %>%
+filter(EXCLUDE != 1)  %>%
+distinct(NOTE_ID)
+View(extract_2words_text_window)
+extract_2words_text_window(discharge_summaries, "blood", "pressure", half_window_size = 10)
+bp_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", half_window_size = 10)
+datable(bp_results)
+bp_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", half_window_size = 10)
+datable(bp_results)
+datatable(bp_results)
+mutate(SYSTOLIC = case_when(str_detect(WINDOW, regex("systolic?", ignore_case = TRUE))
+bp_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", half_window_size = 10) %>%
+bp_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", half_window_size = 10) %>%
+mutate(SYSTOLIC = case_when(str_detect(WINDOW, regex("systolic?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0))
+datatable(bp_results)
+bp_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", half_window_size = 10) %>%
+mutate(SYSTOLIC = case_when(str_detect(WINDOW, regex("systolic?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0)) %>%
+mutate(DIASTOLIC = case_when(str_detect(WINDOW, regex("diastolic?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0))
+datatable(bp_results)
+bp_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", half_window_size = 10) %>%
+mutate(SYSTOLIC = case_when(str_detect(WINDOW, regex("systolic?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0)) %>%
+mutate(DIASTOLIC = case_when(str_detect(WINDOW, regex("diastolic?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0)) %>%
+filter(SYSTOLIC == 1, DIASTOLIC == 1)
+extract_2words_text_window(discharge_summaries, "blood", "pressure", half_window_size = 10)
+bp_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", half_window_size = 10) %>%
+mutate(SYSTOLIC = case_when(str_detect(WINDOW, regex("systolic?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0)) %>%
+mutate(DIASTOLIC = case_when(str_detect(WINDOW, regex("diastolic?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0)) %>%
+filter(SYSTOLIC == 1, DIASTOLIC == 1)
+datatable(bp_results)
+bp_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", half_window_size = 10) %>%
+mutate(SYSTOLIC = case_when(str_detect(WINDOW, regex("systolic?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0)) %>%
+mutate(DIASTOLIC = case_when(str_detect(WINDOW, regex("diastolic?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0)) %>%
+filter(SYSTOLIC == 1, DIASTOLIC == 1) %>%
+distinct(NOTE_ID)
+datatable(bp_results)
+discharge_summaries %>%
+filter(str_detect(TEXT, regex("(?<![a-zA-Z])hypertens(ion|ive)(s)?(?![a-zA-Z])", ignore_case = TRUE))) %>%    #regex filter
+mutate(matched_word = str_extract_all(TEXT, regex("(?<![a-zA-Z])hypertens(ion|ive)(s)?(?![a-zA-Z])", ignore_case = TRUE)))  %>%   #extracts the matching words in TEXT
+select(NOTE_ID, matched_word) #only selects NOTE ID and matching words
+dataframe %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - half_window_size < 1 ~ 1,
+TRUE ~ INDEX - half_window_size),
+WINDOW_END = case_when(INDEX + half_window_size > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + half_window_size),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+ungroup() %>%
+filter(str_detect(string = WORDS, pattern = regex(keyword1, ignore_case = TRUE)),
+str_detect(string = lead(WORDS), pattern = regex(keyword2, ignore_case = TRUE))) %>%
+mutate(WINDOW_END = WINDOW_END + 1)
+extract_2words_text_window <- function(dataframe, keyword1, keyword2, half_window_size){
+dataframe %>%
+group_by(NOTE_ID) %>%
+mutate(WORDS = TEXT) %>%
+separate_rows(WORDS, sep = "[ \n]+") %>%
+mutate(INDEX = seq(from = 1, to = n(), by = 1.0),
+WINDOW_START = case_when(INDEX - half_window_size < 1 ~ 1,
+TRUE ~ INDEX - half_window_size),
+WINDOW_END = case_when(INDEX + half_window_size > max(INDEX) ~ max(INDEX),
+TRUE ~ INDEX + half_window_size),
+WINDOW = word(string = TEXT, start = WINDOW_START, end = WINDOW_END, sep = "[ \n]+")) %>%
+ungroup() %>%
+filter(str_detect(string = WORDS, pattern = regex(keyword1, ignore_case = TRUE)),
+str_detect(string = lead(WORDS), pattern = regex(keyword2, ignore_case = TRUE))) %>%
+mutate(WINDOW_END = WINDOW_END + 1)
+}
+blood_pressure_2words_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", 10)
+datatable(blood_pressure_2words_results)
+source("~/R Projects/C3_M4_Keyword_Window_Techniques.R", echo = TRUE)
+blood_pressure_2words_results <- extract_2words_text_window(discharge_summaries, "blood", "pressure", 10) %>%
+distinct(NOTE_ID)
+datatable(blood_pressure_2words_results)
+results <- extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 10) %>%
+mutate(EXCLUSE = case_when(str_detect(WINDOW, regex(pattern  = "no history of hypertension?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0))
+datatable(results)
+results <- extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 15) %>%
+mutate(EXCLUSE = case_when(str_detect(WINDOW, regex(pattern  = "no history of hypertension?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0))
+datatable(results)
+results <- extract_text_window(discharge_summaries, keyword = "(?<![a-zA-Z])hypertens(ion)(s)?(?![a-zA-Z])", 20) %>%
+mutate(EXCLUSE = case_when(str_detect(WINDOW, regex(pattern  = "no history of hypertension?", ignore_case = TRUE)) ~ 1,
+TRUE ~ 0))
+datatable(results)
+discharge_summaries %>%
+extract_2words_text_window(keyword1 = "blood", keyword2 = "pressure", half_window_size = 10) %>%
+mutate(BLOOD_PRESSURE = case_when(str_detect(WINDOW, regex("blood pressure ([0-9]+/[0-9]+)", ignore_case = TRUE)) ~ str_match(WINDOW, regex("blood pressure ([0-9]+/[0-9]+)", ignore_case = TRUE))[,2],
+TRUE ~ "")) %>%
+filter(BLOOD_PRESSURE != "")
+bp_results <- discharge_summaries %>%
+extract_2words_text_window(keyword1 = "blood", keyword2 = "pressure", half_window_size = 10) %>%
+mutate(BLOOD_PRESSURE = case_when(str_detect(WINDOW, regex("blood pressure ([0-9]+/[0-9]+)", ignore_case = TRUE)) ~ str_match(WINDOW, regex("blood pressure ([0-9]+/[0-9]+)", ignore_case = TRUE))[,2],
+TRUE ~ "")) %>%
+filter(BLOOD_PRESSURE != "")
+datatable(bp_results)
