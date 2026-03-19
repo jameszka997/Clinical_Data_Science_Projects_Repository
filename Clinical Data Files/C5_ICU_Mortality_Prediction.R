@@ -4,6 +4,14 @@
 #The aim of this code base is to develop & evaluate prediction models to determine which one best assesses the risk of death of patients who are admitted to the ICU/Intensive-care Unit.
 
 #Setting up Environment & Datasets
+#Download and install of packages only need to be done on the first run if they are already not installed
+
+# install.packages('tidyverse')
+# install.packages('bigrquery')
+# install.packages('rsample')
+# install.packages('plotROC')
+
+
 library(tidyverse)
 library(bigrquery)
 library(rsample)
@@ -25,7 +33,7 @@ library(plotROC)
 
 
 #Setting up Directory path to the folder holding the local files
-setwd("C:/Users/james/OneDrive/Asztali gép/Data Projects/Clinical Data Science/mimic-iii-clinical-database-demo-1.4")
+setwd("C:/Users/U1061617/OneDrive - Sanofi/WIFI Update Back up/Data Projects/Clinical Data Science/mimic3 - demo files/mimic-iii-clinical-database-demo-1.4")
 
 admissions <- read.csv("ADMISSIONS.csv")  
 patients <- read.csv("PATIENTS.csv")  
@@ -142,7 +150,15 @@ summary(model)
 
 
 
-#Generating predicted hospital mortality for the training patient dataset
+
+
+
+
+
+# Generating predicted probabilities of hospital mortality for training and testing datasets
+# and evaluating model performance via ROC curves and AUC scores
+
+# Training data - predicting outcomes and plotting ROC curve
 training_data$predicted_outcome <- predict(model, training_data, type = "response")
 
 training_roc <- training_data %>% 
@@ -152,17 +168,19 @@ training_roc <- training_data %>%
 
 training_roc
 
+# Training AUC score as a percentage
 calc_auc(training_roc)$AUC*100
 
+# Testing data - predicting outcomes and plotting ROC curve
 
 testing_data$predicted_outcome <- predict(model, testing_data, type = "response")
 
 testing_roc <- testing_data %>% 
-  ggplot(aes(m = predicted_outcome, d = HOSPITAL_EXPIRE_FLAG)) +
+  ggplot(aes(m = predicted_outcome, d = hospital_expire_flag)) +
   geom_roc(n.cuts = 10, labels=F, labelround = 4) +
   style_roc(theme = theme_grey) 
 
 testing_roc
 
+# Testing AUC score as a percentage
 calc_auc(testing_roc)$AUC*100
-
